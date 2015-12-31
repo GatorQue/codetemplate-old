@@ -1,0 +1,45 @@
+###############################################################################
+
+# Include auto target file for this directory
+include(${PROJECT_BINARY_DIR}/Auto@_auto_target@.cmake)
+
+# Include auto target dependency file for this directory
+include(${PROJECT_BINARY_DIR}/Auto@_auto_target@Deps.cmake)
+
+# Add library if library sources was defined in Auto@_auto_target@.cmake
+if(LIB_SOURCES)
+  # Add comprehensive library for this folder
+  ct_add_lib(@_auto_target@
+    INSTALL ${@_auto_target@_INSTALL}
+    SOURCES ${LIB_SOURCES}
+    HEADERS ${LIB_HEADERS})
+endif()
+
+# Add applications if app sources was defined in Auto@_auto_target@.cmake
+if(APP_SOURCES)
+  foreach(_app ${APP_SOURCES})
+    get_filename_component(_name ${_app} NAME_WE)
+    # Add local link dependencies (if lib files exist)
+    ct_add_exe(${_name}
+      INSTALL ${${_name}_INSTALL}
+      SOURCES ${_app}
+      DEPENDS ${${_name}_DEPS}
+      LIBS ${${_name}_LIBS})
+  endforeach()
+endif()
+
+# Add test executables if test sources was defined in Auto@_auto_target@.cmake
+if(TEST_SOURCES)
+  foreach(_test ${TEST_SOURCES})
+    get_filename_component(_name ${_test} NAME_WE)
+    # Add local link dependencies (if lib files exist)
+    ct_add_test(${_name}
+      INSTALL ${${_name}_INSTALL}
+      SOURCES ${_test}
+      DEPENDS ${${_name}_DEPS}
+      LIBS ${${_name}_LIBS})
+  endforeach()
+endif()
+
+###############################################################################
+# EOF
