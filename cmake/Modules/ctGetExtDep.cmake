@@ -7,8 +7,9 @@ if(DEFINED CMAKE_TOOLCHAIN_FILE)
       "-DCMAKE_TOOLCHAIN_FILE:Path=${CMAKE_TOOLCHAIN_FILE}")
 endif()
 
-# Define the __DOWNLOAD, __INSTALL, and __SOURCE variables for use below
+# Define the __DOWNLOAD, __EXTRACT, __INSTALL, and __SOURCE variables for use below
 set(__DOWNLOAD ${CMAKE_SOURCE_DIR}/third_party)
+set(__EXTRACT ${CMAKE_SOURCE_DIR}/third_party)
 if(CMAKE_BUILD_TYPE STREQUAL "")
   set(__INSTALL
       ${CMAKE_SOURCE_DIR}/third_party/${CMAKE_SYSTEM_PROCESSOR}/__default__)
@@ -125,12 +126,17 @@ function(ct_extract_file _file _dir)
     message(FATAL_ERROR "Bad '${_file}' type (not .bz2, .tar, .tar.gz, .tgz, or .zip)")
   endif()
 
+  # Create extract dir if it doesn't yet exist
+  if(NOT EXISTS ${__EXTRACT})
+    file(MAKE_DIRECTORY ${__EXTRACT})
+  endif()
+
   # Prepare a directory for extracting:
   set(i 1234)
-  while(EXISTS "${PROJECT_BINARY_DIR}/ex-${_name}${i}")
+  while(EXISTS "${__EXTRACT}/ex-${_name}${i}")
     math(EXPR i "${i} + 1")
   endwhile()
-  set(_tmp_dir "${PROJECT_BINARY_DIR}/ex-${_name}${i}")
+  set(_tmp_dir "${__EXTRACT}/ex-${_name}${i}")
   file(MAKE_DIRECTORY ${_tmp_dir})
 
   # Extract it:
