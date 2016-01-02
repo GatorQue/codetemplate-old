@@ -43,36 +43,69 @@ IF NOT x%ECONFIG_NAME:Rel=%==x%ECONFIG_NAME% (
 )
 
 REM Determine the correct MAKE_PROJECT to build based on MAKE_TARGET value
-IF NOT x%MAKE_TARGET:test=%==x%MAKE_TARGET% (
-  SET MAKE_PROJECT=RUN_TESTS.vcxproj
+IF NOT x%MAKE_TARGET:clean=%==x%MAKE_TARGET% (
+  SET BUILD_PROJECT=ALL_BUILD.vcxproj
+  SET BUILD_TARGET=/t:Clean
 ) ELSE (
-  IF NOT x%MAKE_TARGET:coverage=%==x%MAKE_TARGET% (
-    SET MAKE_PROJECT=coverage.vcxproj
+  SET BUILD_TARGET=
+  IF NOT x%MAKE_TARGET:test=%==x%MAKE_TARGET% (
+    SET BUILD_PROJECT=RUN_TESTS.vcxproj
   ) ELSE (
-    IF NOT x%MAKE_TARGET:install=%==x%MAKE_TARGET% (
-      SET MAKE_PROJECT=INSTALL.vcxproj
+    IF NOT x%MAKE_TARGET:coverage=%==x%MAKE_TARGET% (
+      SET BUILD_PROJECT=coverage.vcxproj
     ) ELSE (
-      IF NOT x%MAKE_TARGET:doc=%==x%MAKE_TARGET% (
-        SET MAKE_PROJECT=DOC.vcxproj
+      IF NOT x%MAKE_TARGET:install=%==x%MAKE_TARGET% (
+        SET BUILD_PROJECT=INSTALL.vcxproj
       ) ELSE (
-        SET MAKE_PROJECT=ALL_BUILD.vcxproj
+        IF NOT x%MAKE_TARGET:doc=%==x%MAKE_TARGET% (
+          SET BUILD_PROJECT=DOC.vcxproj
+        ) ELSE (
+          SET BUILD_PROJECT=ALL_BUILD.vcxproj
+        )
       )
     )
   )
 )
 
-REM Create CMake build directories
-IF NOT EXIST %BUILD_TYPE%-%TARGET_TYPE%\NUL (
-  mkdir %BUILD_TYPE%-%TARGET_TYPE%
-)
-pushd %BUILD_TYPE%-%TARGET_TYPE%
-cmake .. -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
-popd
+REM Perform distclean
+IF NOT x%MAKE_TARGET:distclean=%==x%MAKE_TARGET% (
+  REM Remove all output directories
+  IF EXIST Debug-Host\NUL (
+    rmdir /s /q Debug-Host
+  )
+  IF EXIST Release-Host\NUL (
+    rmdir /s /q Release-Host
+  )
+  IF EXIST Debug-Target\NUL (
+    rmdir /s /q Debug-Target
+  )
+  IF EXIST Release-Target\NUL (
+    rmdir /s /q Release-Target
+  )
+  REM Remove all other directories
+  IF EXIST coverage\NUL (
+    rmdir /s /q coverage
+  )
+  IF EXIST reference\NUL (
+    rmdir /s /q reference
+  )
+  IF EXIST third_party\NUL (
+    rmdir /s /q third_party
+  )
+) ELSE (  
+  REM Create CMake build directories
+  IF NOT EXIST %BUILD_TYPE%-%TARGET_TYPE%\NUL (
+    mkdir %BUILD_TYPE%-%TARGET_TYPE%
+  )
+  pushd %BUILD_TYPE%-%TARGET_TYPE%
+  cmake .. -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
+  popd
 
-REM Build the directory
-pushd %BUILD_TYPE%-%TARGET_TYPE%
-msbuild %MAKE_PROJECT%
-popd
+  REM Build the directory
+  pushd %BUILD_TYPE%-%TARGET_TYPE%
+  msbuild %BUILD_TARGET% %BUILD_PROJECT%
+  popd
+)
 
 REM Skip usage
 GOTO END
@@ -80,7 +113,7 @@ GOTO END
 :USAGE
 ECHO "Usage: %0 [Target] [ConfigName]"
 ECHO "Where:"
-ECHO "  Target is all (default), coverage, doc, test, or install"
+ECHO "  Target is all (default), clean, coverage, distclean, doc, test, or install"
 ECHO "  ConfigName is HostDebug (default), HostRelease, TargetDebug, or TargetRelease"
 EXIT /B 1
 
